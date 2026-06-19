@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Correction Risk Monitor — Jun 19, 2026</title>
+<meta name="description" content="A transparent, source-cited daily gauge of correction risk in AI company valuations. Methodology and data provenance included.">
+<style>
+  :root{
+    --bg:#0c0f17; --card:#151a27; --card2:#1b2233; --txt:#e8ecf5; --muted:#8b93a7;
+    --green:#22c55e; --amber:#f5b301; --red:#ef4444; --line:#2a3146; --link:#7aa2ff;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+  body{background:radial-gradient(1200px 600px at 50% -10%,#1a2236,#0c0f17 60%);color:var(--txt);padding:32px 20px;min-height:100vh}
+  .wrap{max-width:940px;margin:0 auto}
+  a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
+
+  header{text-align:center;margin-bottom:10px}
+  header h1{font-size:24px;font-weight:800;letter-spacing:.2px}
+  header .sub{color:var(--muted);font-size:13.5px;margin-top:6px;line-height:1.5}
+  header .updated{display:inline-block;margin-top:12px;font-size:12.5px;color:var(--txt);background:var(--card2);border:1px solid var(--line);border-radius:999px;padding:6px 14px}
+  header .updated strong{color:var(--amber)}
+  .badges{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:14px 0 28px}
+  .badge{font-size:11.5px;color:var(--muted);background:var(--card2);border:1px solid var(--line);border-radius:999px;padding:4px 11px}
+
+  .top{display:flex;gap:22px;flex-wrap:wrap;align-items:stretch;margin-bottom:26px}
+  .panel{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:24px}
+  .verdict{flex:1 1 380px;display:flex;gap:24px;align-items:center}
+  .score-side{flex:1 1 200px;display:flex;flex-direction:column;justify-content:center;gap:14px}
+
+  .light{background:#10141f;border:1px solid #2a3146;border-radius:24px;padding:16px 14px;display:flex;flex-direction:column;gap:14px;box-shadow:inset 0 2px 8px rgba(0,0,0,.5)}
+  .lamp{width:56px;height:56px;border-radius:50%;background:#1c2233;position:relative;transition:.4s}
+  .lamp::after{content:"";position:absolute;inset:8px;border-radius:50%;background:rgba(255,255,255,.04)}
+  .lamp.on.g{background:var(--green);box-shadow:0 0 28px 6px rgba(34,197,94,.7)}
+  .lamp.on.a{background:var(--amber);box-shadow:0 0 28px 6px rgba(245,179,1,.7)}
+  .lamp.on.r{background:var(--red);box-shadow:0 0 28px 6px rgba(239,68,68,.7)}
+
+  .verdict-text h2{font-size:15px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px}
+  .verdict-text .label{font-size:30px;font-weight:800;margin-bottom:10px}
+  .verdict-text p{font-size:14.5px;line-height:1.5;color:#cdd3e0}
+
+  .score-num{font-size:64px;font-weight:800;line-height:1;text-align:center}
+  .score-num small{font-size:22px;color:var(--muted);font-weight:600}
+  .meta{display:flex;justify-content:space-between;font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:10px}
+  .meta b{color:var(--txt)}
+
+  .bar{height:12px;border-radius:8px;background:linear-gradient(90deg,var(--green) 0%,var(--green) 34%,var(--amber) 34%,var(--amber) 64%,var(--red) 64%,var(--red) 100%);position:relative}
+  .bar .needle{position:absolute;top:-5px;width:4px;height:22px;background:#fff;border-radius:3px;box-shadow:0 0 6px rgba(0,0,0,.6);transform:translateX(-50%)}
+
+  .section-title{font-size:13px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin:30px 4px 14px}
+  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  @media(max-width:680px){.grid{grid-template-columns:repeat(2,1fr)}.score-num{font-size:52px}}
+  .block{background:var(--card2);border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;gap:14px;align-items:center}
+  .mini{width:34px;height:34px;border-radius:50%;flex:0 0 auto;position:relative}
+  .mini.g{background:var(--green);box-shadow:0 0 16px 3px rgba(34,197,94,.55)}
+  .mini.a{background:var(--amber);box-shadow:0 0 16px 3px rgba(245,179,1,.55)}
+  .mini.r{background:var(--red);box-shadow:0 0 16px 3px rgba(239,68,68,.55)}
+  .block .info{flex:1}
+  .block .name{font-size:13.5px;font-weight:600}
+  .block .num{font-size:20px;font-weight:800;margin-top:2px}
+  .block .num span{font-size:12px;color:var(--muted);font-weight:600}
+
+  .drivers ul{list-style:none;display:flex;flex-direction:column;gap:10px}
+  .drivers li{background:var(--card2);border:1px solid var(--line);border-left:3px solid var(--amber);border-radius:10px;padding:12px 14px;font-size:14px;line-height:1.45;color:#cdd3e0}
+  .drivers li b{color:var(--txt)}
+  sup a{font-size:11px;color:var(--link)}
+  .watch{margin-top:18px;background:#1f1a10;border:1px solid #4a3a14;border-radius:12px;padding:14px 16px;font-size:14px;line-height:1.5}
+  .watch b{color:var(--amber)}
+
+  /* methodology */
+  .method{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:8px 24px 20px;margin-top:10px}
+  details{border-bottom:1px solid var(--line);padding:14px 0}
+  details:last-child{border-bottom:none}
+  summary{cursor:pointer;font-size:15px;font-weight:700;list-style:none}
+  summary::-webkit-details-marker{display:none}
+  summary::before{content:"+ ";color:var(--muted)}
+  details[open] summary::before{content:"– "}
+  .method p,.method li{font-size:13.5px;line-height:1.6;color:#cdd3e0}
+  .method p{margin:10px 0}
+  .method ul{margin:8px 0 8px 18px}
+  table{width:100%;border-collapse:collapse;margin:12px 0;font-size:13px}
+  th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line)}
+  th{color:var(--muted);font-weight:600;text-transform:uppercase;font-size:11px;letter-spacing:.5px}
+  td.r{color:var(--red);font-weight:700}td.a{color:var(--amber);font-weight:700}td.g{color:var(--green);font-weight:700}
+  code{background:#0d1119;border:1px solid var(--line);border-radius:5px;padding:1px 6px;font-size:12.5px}
+
+  .srclist{font-size:13px;line-height:1.7;color:#cdd3e0;counter-reset:s}
+  .srclist li{margin-bottom:4px}
+  .disclaimer{font-size:12.5px;color:var(--muted);line-height:1.6;background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-top:18px}
+  footer{text-align:center;color:var(--muted);font-size:12px;margin-top:26px;line-height:1.7}
+
+  @media print{body{background:#fff;color:#111}.panel,.method,.block,.disclaimer,.watch{background:#fff;border-color:#ccc}.lamp,.mini{-webkit-print-color-adjust:exact;print-color-adjust:exact}a{color:#0b5}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🚦 AI Correction Risk Monitor</h1>
+    <div class="sub">A transparent, source-cited daily gauge of correction risk in AI company valuations<br>
+    Methodology v1.0 · Sample/test run</div>
+    <div class="updated">🕒 Last updated: <strong>Jun 19, 2026 · 18:19 CEST</strong> (16:19 UTC)</div>
+    <div class="badges">
+      <span class="badge">Investor + sector-macro lens</span>
+      <span class="badge">6 weighted signal blocks</span>
+      <span class="badge">All figures sourced &amp; dated</span>
+      <span class="badge">Not financial advice</span>
+    </div>
+  </header>
+
+  <!-- VERDICT -->
+  <div class="top">
+    <div class="panel verdict">
+      <div class="light">
+        <div class="lamp r"></div>
+        <div class="lamp a on a"></div>
+        <div class="lamp g"></div>
+      </div>
+      <div class="verdict-text">
+        <h2>Verdict</h2>
+        <div class="label" style="color:var(--amber)">AMBER</div>
+        <p>Risk is building and closing in on the red threshold: valuations are stretched and capex is surging, but credit remains calm, which delays an imminent correction.</p>
+      </div>
+    </div>
+    <div class="panel score-side">
+      <div class="score-num" style="color:var(--amber)">64<small>/100</small></div>
+      <div class="bar"><div class="needle" style="left:64%"></div></div>
+      <div class="meta"><span>Yesterday: <b>—</b></span><span>Δ <b>—</b></span><span>Confidence: <b>Medium</b></span></div>
+    </div>
+  </div>
+
+  <!-- BLOCKS -->
+  <div class="section-title">Signal blocks — traffic lights</div>
+  <div class="grid">
+    <div class="block"><div class="mini r"></div><div class="info"><div class="name">Valuation</div><div class="num">70 <span>/100 · weight 25%</span></div></div></div>
+    <div class="block"><div class="mini r"></div><div class="info"><div class="name">Capex vs. revenue</div><div class="num">80 <span>/100 · weight 25%</span></div></div></div>
+    <div class="block"><div class="mini a"></div><div class="info"><div class="name">Credit / circular financing</div><div class="num">55 <span>/100 · weight 20%</span></div></div></div>
+    <div class="block"><div class="mini a"></div><div class="info"><div class="name">Real demand</div><div class="num">45 <span>/100 · weight 15%</span></div></div></div>
+    <div class="block"><div class="mini r"></div><div class="info"><div class="name">Technical / sentiment</div><div class="num">65 <span>/100 · weight 10%</span></div></div></div>
+    <div class="block"><div class="mini a"></div><div class="info"><div class="name">News / events</div><div class="num">55 <span>/100 · weight 5%</span></div></div></div>
+  </div>
+
+  <!-- DRIVERS -->
+  <div class="section-title">Key drivers (each tied to a source)</div>
+  <div class="drivers">
+    <ul>
+      <li><b>Runaway capex.</b> The Big Five are set to spend ~$725B in 2026, ~64% above 2025; Meta raised its 2026 capex guidance to as much as $145B. The capex-vs-revenue growth gap is ~46%, wider than the 2001 telecom cycle (~32%).<sup><a href="#s1">[1]</a><a href="#s2">[2]</a><a href="#s3">[3]</a></sup></li>
+      <li><b>Stretched valuation.</b> Nasdaq-100 P/E at ~36 (+4.9% YoY, used as a proxy for the AI complex); the Magnificent 7 are ~33.8% of the S&amp;P 500; tech-AI EV/EBITDA near ~25x, close to historical extremes.<sup><a href="#s4">[4]</a><a href="#s5">[5]</a><a href="#s3">[3]</a></sup></li>
+      <li><b>Technical crack.</b> Broadcom fell ~14% on Jun 4 on soft AI-chip guidance; NVDA is down ~4.7% over two weeks with a 3-month MACD sell signal; broad semiconductor sell-off.<sup><a href="#s6">[6]</a><a href="#s7">[7]</a></sup></li>
+      <li><b>Counterweight (why not red yet).</b> High-yield OAS at ~2.78% — historically tight, i.e. no credit stress yet; real adoption is solid, with the Ramp AI Index showing ~50% of U.S. businesses on paid AI subscriptions.<sup><a href="#s8">[8]</a><a href="#s9">[9]</a></sup></li>
+    </ul>
+    <div class="watch">⚠️ <b>What would trigger red:</b> high-yield spreads starting to widen (&gt;350–400 bp), or a hyperscaler cutting capex guidance — that would confirm the market is no longer willing to fund the bet.</div>
+  </div>
+
+  <!-- METHODOLOGY -->
+  <div class="section-title">Methodology &amp; data provenance</div>
+  <div class="method">
+    <details open>
+      <summary>How the score is built</summary>
+      <p>The headline number is a <b>composite 0–100 correction-risk score</b>: a weighted sum of six signal blocks. Each block is scored 0–100 by how many of its sub-signals breach defined thresholds and by how far. The formula is:</p>
+      <p><code>Score = 0.25·Valuation + 0.25·Capex/Revenue + 0.20·Credit + 0.15·Demand + 0.10·Technical + 0.05·News</code></p>
+      <p>Color bands: <b style="color:var(--green)">🟢 0–34 low</b> · <b style="color:var(--amber)">🟡 35–64 rising</b> · <b style="color:var(--red)">🔴 65–100 high</b>. The <b>trajectory</b> matters as much as the level: a one-day jump of +10 or three consecutive rising days is flagged as a warning even below the red band.</p>
+    </details>
+    <details>
+      <summary>Weights &amp; thresholds by block</summary>
+      <table>
+        <tr><th>Block</th><th>Weight</th><th>Key thresholds</th><th>Today</th></tr>
+        <tr><td>Valuation</td><td>25%</td><td>P/E &gt;35 stretched, &gt;45 extreme; EV/EBITDA &gt;25x</td><td class="r">70</td></tr>
+        <tr><td>Capex vs. revenue</td><td>25%</td><td>capex-revenue gap &gt;40%; capex/sales &gt;34% rising</td><td class="r">80</td></tr>
+        <tr><td>Credit / circular</td><td>20%</td><td>debt issuance pace; HY OAS widening; depreciation stretch</td><td class="a">55</td></tr>
+        <tr><td>Real demand</td><td>15%</td><td>Ramp adoption stalling/falling; weak pilot-to-production</td><td class="a">45</td></tr>
+        <tr><td>Technical</td><td>10%</td><td>MACD sell; VIX up; index concentration</td><td class="r">65</td></tr>
+        <tr><td>News / events</td><td>5%</td><td>guidance cuts, downgrades, "AI fatigue"</td><td class="a">55</td></tr>
+      </table>
+    </details>
+    <details>
+      <summary>Confidence &amp; limitations (read this before sharing)</summary>
+      <ul>
+        <li><b>Confidence = Medium today.</b> Confidence reflects how many signals had fresh, directly-sourced data. It is not a measure of accuracy.</li>
+        <li><b>Proxies are disclosed.</b> The Bloomberg US 20 AI Select (B100QAI) P/E was not directly accessible, so the Nasdaq-100 P/E (~36) is used as a proxy for the AI complex. VIX intraday level was n/a at run time.</li>
+        <li><b>This is a heuristic, not a forecast.</b> Weights and thresholds are judgment-based, not statistically estimated. The score expresses <i>relative pressure</i>, not a probability or a price target.</li>
+        <li><b>No look-ahead, no leverage advice.</b> The monitor does not recommend positions, sizing, or timing.</li>
+        <li><b>Data freshness.</b> Figures are point-in-time as of the date shown; markets move intraday.</li>
+      </ul>
+    </details>
+    <details>
+      <summary>Sources</summary>
+      <ol class="srclist">
+        <li id="s1">Futurum — "AI Capex 2026: The $690B Infrastructure Sprint" (2026). <a href="https://futurumgroup.com/insights/ai-capex-2026-the-690b-infrastructure-sprint/" target="_blank" rel="noopener">link</a></li>
+        <li id="s2">Fortune — "Meta bumped its 2026 capex forecast up to as much as $145 billion" (Apr 29, 2026). <a href="https://fortune.com/2026/04/29/meta-zuckerberg-145-billion-ai-spending-roi/" target="_blank" rel="noopener">link</a></li>
+        <li id="s3">Allianz Research — "AI capex cycle: war-proof for now" (Mar 2026); capex-revenue gap ~46% and EV/EBITDA ~25x. <a href="https://www.allianz-trade.com/en_global/news-insights/economic-insights/AI-capex-cycle-war-proof-now.html" target="_blank" rel="noopener">link</a></li>
+        <li id="s4">GuruFocus — "Nasdaq 100 PE Ratio: 36 (Jun 2026)". <a href="https://www.gurufocus.com/economic_indicators/6778/nasdaq-100-pe-ratio" target="_blank" rel="noopener">link</a></li>
+        <li id="s5">The Motley Fool — "The Magnificent Seven's Market Cap vs. the S&amp;P 500" (2026). <a href="https://www.fool.com/research/magnificent-seven-sp-500/" target="_blank" rel="noopener">link</a></li>
+        <li id="s6">heygotrade — "AI Capex Risk: Why AI Infrastructure Stocks Sold Off" / Broadcom −14% on Jun 4, 2026. <a href="https://www.heygotrade.com/en/blog/ai-capex-risk-openai-revenue-report/" target="_blank" rel="noopener">link</a></li>
+        <li id="s7">StockInvest.us — NVDA technical read, week of Jun 17, 2026 (MACD sell, −4.7% / 2 weeks). <a href="https://stockinvest.us/stock/NVDA" target="_blank" rel="noopener">link</a></li>
+        <li id="s8">Trading Economics — ICE BofA US High Yield OAS ~2.78% (Jun 2026). <a href="https://tradingeconomics.com/united-states/bofa-merrill-lynch-us-high-yield-option-adjusted-spread-fed-data.html" target="_blank" rel="noopener">link</a></li>
+        <li id="s9">Ramp — Ramp AI Index, business AI adoption ~50% (2026). <a href="https://ramp.com/data/ai-index" target="_blank" rel="noopener">link</a></li>
+      </ol>
+    </details>
+  </div>
+
+  <!-- ABOUT -->
+  <div class="section-title">About</div>
+  <div class="method">
+    <p style="font-size:14px;line-height:1.65;color:#cdd3e0;margin:6px 0 0">
+      This monitor is built and maintained by <b style="color:var(--txt)">Andy Areitio</b>.
+    </p>
+    <p style="font-size:14px;line-height:1.65;color:#cdd3e0">
+      <b style="color:var(--txt)">Thesis — marketplaces &amp; post-AI deployment.</b>
+      Instead of &ldquo;teaching computers,&rdquo; the new opportunities revolve around &ldquo;using computers&rdquo; —
+      directing and deploying 24/7 intelligence to do more work (raw volume), cheaper work (cost), better work
+      (quality), and the long tail of tasks that never made economic sense to do before. The most promising places
+      to do so are huge, fragmented, physical verticals like healthcare, logistics, and construction — where
+      fractious human labor is the critical input, not computer tasks.
+    </p>
+    <p style="font-size:14px;line-height:1.65;color:#cdd3e0">
+      Andy is the founder of <a href="https://galenne.com" target="_blank" rel="noopener">Galenne</a>, a compounder
+      building a new category in the leisure space — on the conviction that, over time, we will enjoy more leisure.
+      If you&rsquo;d like to learn more about Galenne, <a href="mailto:areitio@gmail.com">get in touch</a>.
+    </p>
+    <p style="font-size:14px;line-height:1.65;color:#cdd3e0;margin-bottom:6px">
+      📩 <b style="color:var(--txt)">Feedback welcome.</b> Comments or improvements to this methodology?
+      Email <a href="mailto:areitio@gmail.com">areitio@gmail.com</a>.
+    </p>
+  </div>
+
+  <div class="disclaimer">
+    <b>Disclaimer.</b> This monitor is provided for informational and educational purposes only and is <b>not financial, investment, or trading advice</b>, nor an offer or solicitation to buy or sell any security. Figures are drawn from third-party public sources believed to be reliable but are not independently verified and may contain errors or be out of date. The composite score is a judgment-based heuristic, not a forecast or probability. Do your own research and consult a licensed advisor before making any decision. The author accepts no liability for actions taken based on this content.
+  </div>
+
+  <footer>
+    🟢 0–34 low risk &nbsp;·&nbsp; 🟡 35–64 rising risk &nbsp;·&nbsp; 🔴 65–100 high risk<br>
+    AI Correction Risk Monitor · Methodology v1.0 · Generated Jun 19, 2026 · Author: ____<br>
+    Single self-contained HTML file — no external dependencies, no tracking, works offline.
+  </footer>
+</div>
+</body>
+</html>
